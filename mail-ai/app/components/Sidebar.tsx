@@ -84,7 +84,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute }) => {
                 }}
                 className="w-full flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-100 last:rounded-b-lg"
               >
-                <Plus className="w-4 h-4 mr-2" />添加邮箱
+                <Plus className="w-4 h-4 mr-2" />
+                Add Email Account
               </button>
             </div>
           )}
