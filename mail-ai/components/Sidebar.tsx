@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Inbox, 
   FileText, 
@@ -13,28 +13,128 @@ import {
   ChevronDown,
   Mail,
   Plus,
-  LogOut
+  LogOut,
+  Loader2,
+  X
 } from 'lucide-react';
 import AddEmailAccountModal from './AddEmailAccountModal';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
+interface EmailAccount {
+  id: number;
+  emailAddress: string;
+  imapServerAddress: string;
+  smtpServerAddress: string;
+  createdAt: string;
+}
+
 interface SidebarProps {
   onNavigate: (route: string) => void;
   activeRoute: string;
+  onAccountSelect?: (accountId: number) => void;
+  selectedAccountId?: number | null;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute }) => {
-  const [selectedEmail, setSelectedEmail] = useState('nathan@example.com');
+const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute, onAccountSelect, selectedAccountId }) => {
+  const [selectedEmail, setSelectedEmail] = useState<string>('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const emailAccounts = [
-    'nathan@example.com',
-    'work@company.com',
-    'personal@gmail.com'
-  ];
+  // 获取邮箱账户数据
+  const fetchEmailAccounts = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      if (!accessToken) {
+        setError('No access token, please login again.');
+        return;
+      }
+
+      const response = await fetch('/api/mail/accounts/get', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setEmailAccounts(result.accounts || []);
+        // 如果有账户，设置第一个为默认选中
+        if (result.accounts && result.accounts.length > 0 && !selectedEmail) {
+          setSelectedEmail(result.accounts[0].emailAddress);
+          // 通知父组件选择第一个账户
+          if (onAccountSelect) {
+            onAccountSelect(result.accounts[0].id);
+          }
+        }
+      } else {
+        setError(result.error || 'Failed to fetch email accounts');
+      }
+    } catch (err) {
+      setError('Failed to fetch email accounts');
+      console.error('Error fetching email accounts:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 组件加载时获取数据
+  useEffect(() => {
+    fetchEmailAccounts();
+  }, []);
+
+  // 添加邮箱账户成功后刷新数据
+  const handleAddEmailSuccess = () => {
+    fetchEmailAccounts();
+  };
+
+  // 删除邮箱账户
+  const handleDeleteEmail = async (account: EmailAccount) => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      if (!accessToken) {
+        alert('No access token, please login again.');
+        return;
+      }
+
+      const response = await fetch(`/api/mail/accounts/delete?id=${account.id}&email=${encodeURIComponent(account.emailAddress)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // 刷新数据
+        fetchEmailAccounts();
+        // 如果删除的是当前选中的邮箱，清空选择
+        if (selectedEmail === account.emailAddress) {
+          setSelectedEmail('');
+        }
+      } else {
+        alert(`Failed to delete account: ${result.error}`);
+      }
+    } catch (err) {
+      alert('Failed to delete account');
+      console.error('Error deleting email account:', err);
+    }
+  };
 
   const topMenuItems = [
     { id: 'todo', label: 'To-Do', icon: CheckSquare, count: 8 },
@@ -76,28 +176,75 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute }) => {
           
           {isDropdownOpen && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              {emailAccounts.map((email) => (
-                <button
-                  key={email}
-                  onClick={() => {
-                    setSelectedEmail(email);
-                    setIsDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg"
-                >
-                  {email}
-                </button>
-              ))}
-              {/* 添加邮箱选项 */}
-              <button
-                onClick={() => {
-                  setShowAddModal(true);
-                  setIsDropdownOpen(false);
-                }}
-                className="w-full flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-100 last:rounded-b-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />Add Email
-              </button>
+              {isLoading ? (
+                <div className="flex items-center justify-center px-3 py-4 text-sm text-gray-500">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </div>
+              ) : error ? (
+                <div className="px-3 py-2 text-sm text-red-500">
+                  {error}
+                </div>
+              ) : emailAccounts.length === 0 ? (
+                <>
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    No email accounts found
+                  </div>
+                  {/* 添加邮箱选项 */}
+                  <button
+                    onClick={() => {
+                      setShowAddModal(true);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-100 last:rounded-b-lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />Add Email
+                  </button>
+                </>
+              ) : (
+                <>
+                  {emailAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg"
+                    >
+                      <button
+                        onClick={() => {
+                          setSelectedEmail(account.emailAddress);
+                          setIsDropdownOpen(false);
+                          // 通知父组件选择账户
+                          if (onAccountSelect) {
+                            onAccountSelect(account.id);
+                          }
+                        }}
+                        className={`flex-1 text-left ${selectedAccountId === account.id ? 'text-blue-600 font-medium' : ''}`}
+                      >
+                        {account.emailAddress}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteEmail(account);
+                        }}
+                        className="ml-2 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                        title="Delete email account"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {/* 添加邮箱选项 */}
+                  <button
+                    onClick={() => {
+                      setShowAddModal(true);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-100 last:rounded-b-lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />Add Email
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -175,7 +322,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute }) => {
 
       {/* 添加邮箱弹窗 */}
       {showAddModal && (
-        <AddEmailAccountModal onClose={() => setShowAddModal(false)} />
+        <AddEmailAccountModal 
+          onClose={() => setShowAddModal(false)} 
+          onSuccess={handleAddEmailSuccess}
+        />
       )}
 
       {/* Logout 按钮固定在底部 */}

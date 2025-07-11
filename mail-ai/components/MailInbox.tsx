@@ -1,25 +1,85 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Inbox from './Inbox';
 import EmailDetail from './EmailDetail';
+import { createClient } from '@/lib/supabase/client';
 
 interface Email {
   id: string;
-  sender: string;
   subject: string;
-  preview: string;
-  time: string;
-  isRead: boolean;
-  isStarred: boolean;
-  hasAttachment: boolean;
+  from: string;
+  to: string;
+  date: string;
+  text: string;
+  html?: string;
+  attachments: Array<{
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+  flags: string[];
+  uid: number;
+}
+
+interface EmailAccount {
+  id: number;
+  emailAddress: string;
+  imapServerAddress: string;
+  smtpServerAddress: string;
+  createdAt: string;
 }
 
 const MailInbox: React.FC = () => {
   const [activeRoute, setActiveRoute] = useState('inbox');
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [isDetailExpanded, setIsDetailExpanded] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
+
+  // 获取邮箱账户数据
+  const fetchEmailAccounts = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      if (!accessToken) {
+        return;
+      }
+
+      const response = await fetch('/api/mail/accounts/get', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setEmailAccounts(result.accounts || []);
+        // 如果有账户，设置第一个为默认选中
+        if (result.accounts && result.accounts.length > 0 && !selectedAccountId) {
+          setSelectedAccountId(result.accounts[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching email accounts:', err);
+    }
+  };
+
+  // 组件加载时获取数据
+  useEffect(() => {
+    fetchEmailAccounts();
+  }, []);
+
+  // 处理邮箱账户选择
+  const handleAccountSelect = (accountId: number) => {
+    setSelectedAccountId(accountId);
+    setSelectedEmail(null);
+    setIsDetailExpanded(false);
+  };
 
   const handleNavigate = (route: string) => {
     setActiveRoute(route);
@@ -44,6 +104,7 @@ const MailInbox: React.FC = () => {
           <Inbox 
             onEmailSelect={handleEmailSelect}
             selectedEmail={selectedEmail}
+            selectedAccountId={selectedAccountId || undefined}
           />
         );
       case 'drafts':
@@ -128,13 +189,15 @@ const MailInbox: React.FC = () => {
         <Sidebar 
           onNavigate={handleNavigate}
           activeRoute={activeRoute}
+          onAccountSelect={handleAccountSelect}
+          selectedAccountId={selectedAccountId}
         />
         
         {/* Main Content Area */}
-        <div className="flex-1 flex space-x-4">
+        <div className="flex-1 flex space-x-4 min-h-0">
           {/* Email List - 在inbox路由且未扩展时显示 */}
           {activeRoute === 'inbox' && !isDetailExpanded && (
-            <div className="flex-1 transition-all duration-300">
+            <div className="flex-shrink-0 min-w-[320px] max-w-[33vw] w-full md:w-[420px] transition-all duration-300 min-h-0">
               {renderMainContent()}
             </div>
           )}
@@ -142,22 +205,21 @@ const MailInbox: React.FC = () => {
           {/* Email Detail - 只在inbox路由显示 */}
           {activeRoute === 'inbox' && (
             <div
-              className={`transition-all duration-300 ${
-                isDetailExpanded ? 'flex-1' : 'w-96'
-              }`}
+              className={`transition-all duration-300 min-h-0 flex-1 overflow-x-hidden`}
             >
               <EmailDetail 
                 email={selectedEmail} 
                 isExpanded={isDetailExpanded}
                 onExpand={handleDetailExpand}
                 onBack={handleDetailBack}
+                accountId={selectedAccountId}
               />
             </div>
           )}
           
           {/* 其他路由正常展示 */}
           {activeRoute !== 'inbox' && (
-            <div className="flex-1">
+            <div className="flex-1 min-h-0">
               {renderMainContent()}
             </div>
           )}

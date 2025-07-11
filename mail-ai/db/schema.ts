@@ -1,8 +1,9 @@
+import { sql } from "drizzle-orm";
 import { pgTable, serial, varchar, uuid, smallint, timestamp } from "drizzle-orm/pg-core";
 
 export const emailAccounts = pgTable("EmailAccounts", {
   id: serial("id").primaryKey(),
-  userId: uuid("user_id").defaultRandom().notNull(),
+  userId: uuid("user_id").default(sql`(auth.uid())`).notNull(),
   emailAddress: varchar("email_address", { length: 255 }),
   encryptedPassword: varchar("encrypted_password", { length: 255 }),
   imapServerAddress: varchar("imap_server_address", { length: 255 }),

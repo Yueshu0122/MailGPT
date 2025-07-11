@@ -3,17 +3,18 @@ import { createClient } from '@/lib/supabase/client';
 
 interface AddEmailAccountModalProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) => {
+const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose, onSuccess }) => {
   const [form, setForm] = useState({
-    email: '',
+    emailAddress: '',
     password: '',
-    imapHost: '',
-    imapPort: '',
+    imapServerAddress: '',
+    imapServerPort: '',
     imapEncryption: 'SSL/TLS',
-    smtpHost: '',
-    smtpPort: '',
+    smtpServerAddress: '',
+    smtpServerPort: '',
     smtpEncryption: 'SSL/TLS',
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -53,6 +54,10 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
       
       if (result.success) {
         showMessage('success', 'Email account added successfully!');
+        // 调用成功回调
+        if (onSuccess) {
+          onSuccess();
+        }
         setTimeout(() => onClose(), 3000); // 3秒后关闭弹窗
       } else {
         showMessage('error', 'Failed to add account');
@@ -96,8 +101,8 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
-                name="email"
-                value={form.email}
+                name="emailAddress"
+                value={form.emailAddress}
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -127,8 +132,8 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
                   <label className="block text-xs text-gray-600 mb-1">IMAP Server</label>
                   <input
                     type="text"
-                    name="imapHost"
-                    value={form.imapHost}
+                    name="imapServerAddress"
+                    value={form.imapServerAddress}
                     onChange={handleChange}
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded-lg"
@@ -140,8 +145,8 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
                   <label className="block text-xs text-gray-600 mb-1">Port</label>
                   <input
                     type="number"
-                    name="imapPort"
-                    value={form.imapPort}
+                    name="imapServerPort"
+                    value={form.imapServerPort}
                     onChange={handleChange}
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded-lg"
@@ -173,8 +178,8 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
                   <label className="block text-xs text-gray-600 mb-1">SMTP Server</label>
                   <input
                     type="text"
-                    name="smtpHost"
-                    value={form.smtpHost}
+                    name="smtpServerAddress"
+                    value={form.smtpServerAddress}
                     onChange={handleChange}
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded-lg"
@@ -186,8 +191,8 @@ const AddEmailAccountModal: React.FC<AddEmailAccountModalProps> = ({ onClose }) 
                   <label className="block text-xs text-gray-600 mb-1">Port</label>
                   <input
                     type="number"
-                    name="smtpPort"
-                    value={form.smtpPort}
+                    name="smtpServerPort"
+                    value={form.smtpServerPort}
                     onChange={handleChange}
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded-lg"
