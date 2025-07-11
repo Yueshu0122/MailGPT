@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
-import { db } from "@/db";
-import { emailAccounts } from "@/db/schema";
-import { sql } from "drizzle-orm";
-import Imap from "node-imap";
 import { verifyEmailAccount, getEmailAccountPassword, createImapConnection } from "@/lib/utils";
 
 export const GET = withAuth(async (req: NextRequest, user: any) => {
