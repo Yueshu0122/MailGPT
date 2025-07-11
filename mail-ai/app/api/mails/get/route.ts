@@ -318,18 +318,6 @@ export const GET = withAuth(async (req: NextRequest, user: any) => {
               
               messages.push(emailData);
               
-              // 打印第一条邮件的详细信息
-              if (messages.length === 1) {
-                console.log('📨 First email details (full):');
-                console.log('  Subject:', emailData.subject);
-                console.log('  From:', emailData.from);
-                console.log('  To:', emailData.to);
-                console.log('  Date:', emailData.date);
-                console.log('  Text length:', emailData.text.length);
-                console.log('  Has HTML:', !!emailData.html);
-                console.log('  Attachments:', emailData.attachments.length);
-                console.log('  UID:', emailData.uid);
-              }
             } catch (error) {
               console.error('Error parsing email:', error);
             }

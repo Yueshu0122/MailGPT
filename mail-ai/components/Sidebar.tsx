@@ -20,6 +20,7 @@ import {
 import AddEmailAccountModal from './AddEmailAccountModal';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import Link from "next/link";
 
 interface EmailAccount {
   id: number;
@@ -318,6 +319,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activeRoute, onAccountSel
             );
           })}
         </div>
+        {/* 删除重复的 ToDos 菜单项 */}
       </nav>
 
       {/* 添加邮箱弹窗 */}

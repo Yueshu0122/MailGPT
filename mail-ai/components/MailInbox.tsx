@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Inbox from './Inbox';
 import EmailDetail from './EmailDetail';
+import Todos from './Todos';
 import { createClient } from '@/lib/supabase/client';
 
 interface Email {
@@ -154,12 +155,7 @@ const MailInbox: React.FC = () => {
         );
       case 'todo':
         return (
-          <div className="flex-1 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <h2 className="text-xl font-semibold mb-2">To-Do</h2>
-              <p>To-do items will appear here</p>
-            </div>
-          </div>
+          <Todos />
         );
       case 'ai-assistant':
         return (
