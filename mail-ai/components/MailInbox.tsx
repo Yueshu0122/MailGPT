@@ -98,6 +98,14 @@ const MailInbox: React.FC = () => {
   const handleDetailExpand = () => setIsDetailExpanded(true);
   const handleDetailBack = () => setIsDetailExpanded(false);
 
+  // 处理添加ToDo
+  const handleAddTodo = (email: Email) => {
+    console.log('添加ToDo:', email);
+    // TODO: 这里可以打开ToDo编辑弹窗，或者直接跳转到ToDo页面
+    // 暂时先跳转到ToDo页面
+    setActiveRoute('todo');
+  };
+
   const renderMainContent = () => {
     switch (activeRoute) {
       case 'inbox':
@@ -106,6 +114,7 @@ const MailInbox: React.FC = () => {
             onEmailSelect={handleEmailSelect}
             selectedEmail={selectedEmail}
             selectedAccountId={selectedAccountId || undefined}
+            onAddTodo={handleAddTodo}
           />
         );
       case 'drafts':
@@ -155,7 +164,7 @@ const MailInbox: React.FC = () => {
         );
       case 'todo':
         return (
-          <Todos />
+          <Todos selectedAccountId={selectedAccountId} />
         );
       case 'ai-assistant':
         return (
@@ -193,7 +202,7 @@ const MailInbox: React.FC = () => {
         <div className="flex-1 flex space-x-4 min-h-0">
           {/* Email List - 在inbox路由且未扩展时显示 */}
           {activeRoute === 'inbox' && !isDetailExpanded && (
-            <div className="flex-shrink-0 min-w-[320px] max-w-[33vw] w-full md:w-[420px] transition-all duration-300 min-h-0">
+            <div className="flex-shrink-0 min-w-[320px] max-w-[33vw] w-full md:w-[820px] transition-all duration-300 min-h-0">
               {renderMainContent()}
             </div>
           )}

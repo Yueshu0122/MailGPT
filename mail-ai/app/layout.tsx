@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 const defaultUrl =
   typeof process.env.VERCEL_URL === "string" && process.env.VERCEL_URL.length > 0
@@ -28,15 +29,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-          forcedTheme="light"
-        >
-          {children}
-        </ThemeProvider>
+        <Tooltip.Provider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+            forcedTheme="light"
+          >
+            {children}
+          </ThemeProvider>
+        </Tooltip.Provider>
       </body>
     </html>
   );

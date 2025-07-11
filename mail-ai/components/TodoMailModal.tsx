@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Circle, CheckCircle, AlertCircle, X } from "lucide-react";
 import EmailDetail from "./EmailDetail";
+import { createClient } from "@/lib/supabase/client";
 
 interface TodoMailModalProps {
   open: boolean;
@@ -48,8 +49,38 @@ export default function TodoMailModal({ open, todo, onClose, onSave }: TodoMailM
   if (!open) return null;
 
   const handleClose = () => {
+    // 1. 立即更新前端
     onSave({ ...todo, content, status, due_at: dueAt });
     onClose();
+
+    // 2. 异步请求后端
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const todoData = {
+          ...(todo?.id && { id: todo.id }),
+          content,
+          status,
+          due_at: dueAt,
+          email_address: todo?.email_address || "new@example.com",
+          email_uid: todo?.email_uid || null,
+        };
+
+        await fetch("/api/todos/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(todoData),
+        });
+      } catch (error) {
+        console.error("保存出错:", error);
+      }
+    })();
   };
 
   return (

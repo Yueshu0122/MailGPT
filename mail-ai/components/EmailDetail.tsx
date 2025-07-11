@@ -16,6 +16,7 @@ import {
   Minimize2
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import DOMPurify from 'dompurify';
 
 interface Email {
   id: string;
@@ -172,11 +173,17 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email, isExpanded = false, on
 
       {/* Email Content - 滚动区域 */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className={`prose prose-sm max-w-none ${isExpanded ? 'max-w-4xl mx-auto' : ''}`}>
+        <div className="w-full overflow-x-auto">
+          {/* 只用 .prose 包裹自有结构，不包裹邮件内容 */}
+          <div className="prose prose-sm max-w-none">
+            {/* 你可以在这里放自定义的结构，比如附件、操作按钮等 */}
+          </div>
+          {/* 邮件内容单独渲染，避免样式污染 */}
           {email.html ? (
-            <div 
+            <div
               className="text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: email.html }}
+              style={{ whiteSpace: 'pre-wrap', overflowX: 'auto' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(email.html) }}
             />
           ) : (
             <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">

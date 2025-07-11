@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Star, Clock, User, Mail, Loader2 } from 'lucide-react';
+import { Search, Star, Clock, User, Mail, Loader2, CheckSquare } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 interface Email {
   id: string;
@@ -25,9 +26,10 @@ interface InboxProps {
   onEmailSelect: (email: Email) => void;
   selectedEmail: Email | null;
   selectedAccountId?: number;
+  onAddTodo?: (email: Email) => void;
 }
 
-const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAccountId }) => {
+const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAccountId, onAddTodo }) => {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [emails, setEmails] = useState<Email[]>([]);
@@ -246,6 +248,30 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
                       <span className="text-xs text-gray-500">{formatTime(email.date)}</span>
                       {email.flags.includes('\\Flagged') && (
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      )}
+                      {/* ToDo按钮 */}
+                      {typeof onAddTodo === 'function' && (
+                        <Tooltip.Root>
+                          <Tooltip.Trigger asChild>
+                            <button
+                              className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-100 rounded-full transition-colors"
+                              onClick={e => { e.stopPropagation(); onAddTodo(email); }}
+                            >
+                              <CheckSquare size={16} />
+                            </button>
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Content
+                              className="bg-black text-white px-3 py-1 rounded text-base shadow-lg z-50"
+                              side="top"
+                              align="center"
+                              sideOffset={4}
+                            >
+                              Add ToDo for this email by AI
+                              <Tooltip.Arrow className="fill-black" />
+                            </Tooltip.Content>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
                       )}
                     </div>
                   </div>

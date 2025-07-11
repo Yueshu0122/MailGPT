@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Circle, CheckCircle, AlertCircle, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface TodoEditModalProps {
   open: boolean;
   todo: any;
   onClose: () => void;
   onSave: (updated: any) => void;
+  selectedAccountId?: number | null;
 }
 
 const statusIcons = {
@@ -27,7 +29,7 @@ function getTodayStr() {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-export default function TodoEditModal({ open, todo, onClose, onSave }: TodoEditModalProps) {
+export default function TodoEditModal({ open, todo, onClose, onSave, selectedAccountId }: TodoEditModalProps) {
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("pending");
   const [dueAt, setDueAt] = useState(getTodayStr());
@@ -47,8 +49,53 @@ export default function TodoEditModal({ open, todo, onClose, onSave }: TodoEditM
   if (!open) return null;
 
   const handleClose = () => {
+    // 1. 立即更新前端
     onSave({ ...todo, content, status, due_at: dueAt });
     onClose();
+
+    // 2. 异步请求后端
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        // 获取邮箱地址逻辑
+        let emailAddress = "new@example.com";
+        if (selectedAccountId) {
+          try {
+            const response = await fetch('/api/mail/accounts/get', {
+              headers: { 'Authorization': `Bearer ${session.access_token}` },
+            });
+            const result = await response.json();
+            if (result.success && result.accounts) {
+              const selectedAccount = result.accounts.find((account: any) => account.id === selectedAccountId);
+              if (selectedAccount) emailAddress = selectedAccount.emailAddress;
+            }
+          } catch {}
+        }
+
+        const todoData = {
+          ...(todo?.id && { id: todo.id }),
+          content,
+          status,
+          due_at: dueAt,
+          email_address: todo?.email_address || emailAddress,
+          email_uid: todo?.email_uid || null,
+        };
+
+        await fetch("/api/todos/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(todoData),
+        });
+      } catch (error) {
+        console.error("保存出错:", error);
+      }
+    })();
   };
 
   return (
@@ -70,7 +117,7 @@ export default function TodoEditModal({ open, todo, onClose, onSave }: TodoEditM
             value={content}
             onChange={e => setContent(e.target.value)}
             rows={4}
-            placeholder="输入ToDo内容..."
+            placeholder="Enter your todo..."
           />
         </div>
         {/* 底部 状态+日期 横向排列 */}
