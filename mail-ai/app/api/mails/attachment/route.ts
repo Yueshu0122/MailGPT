@@ -1,3 +1,4 @@
+export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { verifyEmailAccount, getEmailAccountPassword, createImapConnection } from "@/lib/utils";
