@@ -2,14 +2,14 @@ import React from "react";
 import { Edit2, Mail, X } from "lucide-react";
 
 interface Todo {
-  id: number;
+  id: string;
   content: string;
   status: string;
-  due_at: string;
-  email_address: string;
-  email_uid: number;
-  created_at: string;
-  updated_at: string;
+  dueAt: string;
+  emailAddress: string;
+  emailUid: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface TodoCardProps {
@@ -24,6 +24,25 @@ const statusColor: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   completed: "bg-green-100 text-green-800",
   overdue: "bg-red-100 text-red-800",
+};
+
+// 格式化日期显示 - 只显示日期
+const formatDueDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Invalid date";
+    }
+    
+    // 只显示 MM/DD 格式
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return "Invalid date";
+  }
 };
 
 export default function TodoCard({ todo, onEdit, onShowMail, onDelete, fontSize = 'base' }: TodoCardProps) {
@@ -48,7 +67,7 @@ export default function TodoCard({ todo, onEdit, onShowMail, onDelete, fontSize 
         >
           <Edit2 size={14} />
         </button>
-        {todo.email_uid ? (
+        {todo.emailUid ? (
           <button
             className="p-0.5 text-gray-400 hover:text-green-500"
             style={{ fontSize: 14 }}
@@ -72,7 +91,9 @@ export default function TodoCard({ todo, onEdit, onShowMail, onDelete, fontSize 
         <span className={`${fontSizeClasses[fontSize]} text-gray-900 break-words leading-relaxed`}>{todo.content}</span>
       </div>
       <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200">
-        <span className="text-xs text-gray-500">due:{todo.due_at ? new Date(todo.due_at).toLocaleDateString() : "-"}</span>
+        <span className="text-xs text-gray-500">
+          due: {todo.dueAt && todo.dueAt !== "" ? formatDueDate(todo.dueAt) : "-"}
+        </span>
         <span className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${statusColor[todo.status] || "bg-gray-100 text-gray-800"}`}>
           {todo.status}
         </span>

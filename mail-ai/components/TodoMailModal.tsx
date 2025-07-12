@@ -41,7 +41,7 @@ export default function TodoMailModal({ open, todo, onClose, onSave, selectedAcc
     if (todo) {
       setContent(todo.content || "");
       setStatus(todo.status || "pending");
-      setDueAt(todo.due_at ? todo.due_at.slice(0, 10) : getTodayStr());
+      setDueAt(todo.dueAt ? todo.dueAt.slice(0, 10) : getTodayStr());
     } else {
       setContent("");
       setStatus("pending");
@@ -51,7 +51,7 @@ export default function TodoMailModal({ open, todo, onClose, onSave, selectedAcc
 
   // 获取邮件详情
   useEffect(() => {
-    if (open && todo?.email_uid && selectedAccountId) {
+    if (open && todo?.emailUid && selectedAccountId) {
       const fetchEmailDetail = async () => {
         try {
           setIsLoadingEmail(true);
@@ -64,7 +64,7 @@ export default function TodoMailModal({ open, todo, onClose, onSave, selectedAcc
             return;
           }
 
-          const response = await fetch(`/api/mails/detail?accountId=${selectedAccountId}&uid=${todo.email_uid}`, {
+          const response = await fetch(`/api/mails/detail?accountId=${selectedAccountId}&uid=${todo.emailUid}`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
             },
@@ -88,13 +88,13 @@ export default function TodoMailModal({ open, todo, onClose, onSave, selectedAcc
     } else {
       setEmailData(null);
     }
-  }, [open, todo?.email_uid, selectedAccountId]);
+      }, [open, todo?.emailUid, selectedAccountId]);
 
   if (!open) return null;
 
   const handleClose = () => {
     // 1. 立即更新前端
-    onSave({ ...todo, content, status, due_at: dueAt });
+            onSave({ ...todo, content, status, dueAt: dueAt });
     onClose();
 
     // 2. 异步请求后端
@@ -109,8 +109,8 @@ export default function TodoMailModal({ open, todo, onClose, onSave, selectedAcc
           content,
           status,
           due_at: dueAt,
-          email_address: todo?.email_address || "new@example.com",
-          email_uid: todo?.email_uid || null,
+          email_address: todo?.emailAddress || "new@example.com",
+          email_uid: todo?.emailUid || null,
         };
 
         await fetch("/api/todos/add", {

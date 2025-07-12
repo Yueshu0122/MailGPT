@@ -122,11 +122,11 @@ export default function Todos({ selectedAccountId }: TodosProps) {
       id: Math.max(...todos.map(t => t.id), 0) + 1,
       content: newTodo.content || "New Todo",
       status: newTodo.status || "pending",
-      due_at: newTodo.due_at || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      email_address: newTodo.email_address || "new@example.com",
-      email_uid: newTodo.email_uid || null,
+      dueAt: newTodo.dueAt || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      emailAddress: newTodo.emailAddress || "new@example.com",
+      emailUid: newTodo.emailUid || null,
     };
     setTodos(todos => [todoWithId, ...todos]);
     setShowAddTodo(false);

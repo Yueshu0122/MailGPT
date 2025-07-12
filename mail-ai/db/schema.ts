@@ -16,7 +16,7 @@ export const emailAccounts = pgTable("EmailAccounts", {
 });
 
 export const todos = pgTable("ToDos", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`).notNull().unique(),
   userId: uuid("user_id").default(sql`(auth.uid())`).notNull(),
   content: varchar("content", { length: 500 }).notNull(),
   status: varchar("status", { length: 50 }).default("pending"),

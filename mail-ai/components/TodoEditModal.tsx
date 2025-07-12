@@ -38,7 +38,24 @@ export default function TodoEditModal({ open, todo, onClose, onSave, selectedAcc
     if (todo) {
       setContent(todo.content || "");
       setStatus(todo.status || "pending");
-      setDueAt(todo.due_at ? todo.due_at.slice(0, 10) : getTodayStr());
+      // 正确处理日期格式
+      if (todo.dueAt) {
+        try {
+          const date = new Date(todo.dueAt);
+          if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            setDueAt(`${year}-${month}-${day}`);
+          } else {
+            setDueAt(getTodayStr());
+          }
+        } catch (error) {
+          setDueAt(getTodayStr());
+        }
+      } else {
+        setDueAt(getTodayStr());
+      }
     } else {
       setContent("");
       setStatus("pending");
@@ -49,8 +66,9 @@ export default function TodoEditModal({ open, todo, onClose, onSave, selectedAcc
   if (!open) return null;
 
   const handleClose = () => {
-    // 1. 立即更新前端
-    onSave({ ...todo, content, status, due_at: dueAt });
+    // 1. 立即更新前端 - 转换为ISO格式
+    const dueDate = dueAt ? new Date(dueAt + 'T00:00:00').toISOString() : null;
+    onSave({ ...todo, content, status, dueAt: dueDate });
     onClose();
 
     // 2. 异步请求后端
@@ -75,13 +93,16 @@ export default function TodoEditModal({ open, todo, onClose, onSave, selectedAcc
           } catch {}
         }
 
+        // 将日期字符串转换为ISO格式
+        const dueDate = dueAt ? new Date(dueAt + 'T00:00:00').toISOString() : null;
+        
         const todoData = {
           ...(todo?.id && { id: todo.id }),
           content,
           status,
-          due_at: dueAt,
-          email_address: todo?.email_address || emailAddress,
-          email_uid: todo?.email_uid || null,
+          due_at: dueDate,
+          email_address: todo?.emailAddress || emailAddress,
+          email_uid: todo?.emailUid || null,
         };
 
         await fetch("/api/todos/add", {
