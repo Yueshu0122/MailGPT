@@ -324,7 +324,7 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
                               align="center"
                               sideOffset={4}
                             >
-                              {processingEmailId === email.id ? 'Processing...' : 'AI分析并创建待办事项'}
+                              {processingEmailId === email.id ? 'Processing...' : 'AI analyze and create ToDo'}
                               <Tooltip.Arrow className="fill-black" />
                             </Tooltip.Content>
                           </Tooltip.Portal>
