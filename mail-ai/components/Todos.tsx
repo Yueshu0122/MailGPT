@@ -120,10 +120,13 @@ export default function Todos({ selectedAccountId }: TodosProps) {
     const todoWithId = {
       ...newTodo,
       id: Math.max(...todos.map(t => t.id), 0) + 1,
+      content: newTodo.content || "New Todo",
+      status: newTodo.status || "pending",
+      due_at: newTodo.due_at || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      email_address: "new@example.com",
-      email_uid: null,
+      email_address: newTodo.email_address || "new@example.com",
+      email_uid: newTodo.email_uid || null,
     };
     setTodos(todos => [todoWithId, ...todos]);
     setShowAddTodo(false);
