@@ -17,6 +17,7 @@ interface TodoCardProps {
   onEdit?: (todo: Todo) => void;
   onShowMail?: (todo: Todo) => void;
   onDelete?: (todo: Todo) => void;
+  fontSize?: 'xs' | 'sm' | 'base' | 'lg' | 'xl';
 }
 
 const statusColor: Record<string, string> = {
@@ -25,7 +26,16 @@ const statusColor: Record<string, string> = {
   overdue: "bg-red-100 text-red-800",
 };
 
-export default function TodoCard({ todo, onEdit, onShowMail, onDelete }: TodoCardProps) {
+export default function TodoCard({ todo, onEdit, onShowMail, onDelete, fontSize = 'base' }: TodoCardProps) {
+  // 字体大小映射
+  const fontSizeClasses = {
+    xs: 'text-xs',
+    sm: 'text-sm',
+    base: 'text-base',
+    lg: 'text-lg',
+    xl: 'text-xl',
+  };
+
   return (
     <div className="relative flex flex-col bg-gray-50 rounded-lg shadow border border-gray-100 p-4 hover:shadow-md transition-shadow w-48 min-w-[180px] max-w-[200px] h-70">
       {/* 左上角图标 */}
@@ -59,7 +69,7 @@ export default function TodoCard({ todo, onEdit, onShowMail, onDelete }: TodoCar
         <X size={14} />
       </button>
       <div className="flex-1 mt-2">
-        <span className="font-semibold text-sm text-gray-900 break-words leading-relaxed">{todo.content}</span>
+        <span className={`${fontSizeClasses[fontSize]} text-gray-900 break-words leading-relaxed`}>{todo.content}</span>
       </div>
       <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-200">
         <span className="text-xs text-gray-500">due:{todo.due_at ? new Date(todo.due_at).toLocaleDateString() : "-"}</span>

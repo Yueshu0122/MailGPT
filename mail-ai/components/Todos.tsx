@@ -4,6 +4,7 @@ import TodoEditModal from "./TodoEditModal";
 import TodoMailModal from "./TodoMailModal";
 import { Plus } from "lucide-react";
 import { CheckSquare } from "lucide-react";
+import { Minus, Plus as PlusIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 // mockTodos 仅作初始占位
@@ -20,6 +21,24 @@ export default function Todos({ selectedAccountId }: TodosProps) {
   const [editTodo, setEditTodo] = useState<any | null>(null);
   const [showMailTodo, setShowMailTodo] = useState<any | null>(null);
   const [showAddTodo, setShowAddTodo] = useState(false);
+  const [fontSize, setFontSize] = useState<'xs' | 'sm' | 'base' | 'lg' | 'xl'>('base');
+
+  // 字体大小调整函数
+  const decreaseFontSize = () => {
+    const sizes: ('xs' | 'sm' | 'base' | 'lg' | 'xl')[] = ['xs', 'sm', 'base', 'lg', 'xl'];
+    const currentIndex = sizes.indexOf(fontSize);
+    if (currentIndex > 0) {
+      setFontSize(sizes[currentIndex - 1]);
+    }
+  };
+
+  const increaseFontSize = () => {
+    const sizes: ('xs' | 'sm' | 'base' | 'lg' | 'xl')[] = ['xs', 'sm', 'base', 'lg', 'xl'];
+    const currentIndex = sizes.indexOf(fontSize);
+    if (currentIndex < sizes.length - 1) {
+      setFontSize(sizes[currentIndex + 1]);
+    }
+  };
 
   // 首次加载时从接口获取todos
   useEffect(() => {
@@ -142,13 +161,38 @@ export default function Todos({ selectedAccountId }: TodosProps) {
           <CheckSquare className="w-6 h-6 text-blue-500" />
           To-Do
         </h2>
-        <button
-          onClick={() => setShowAddTodo(true)}
-          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
-          title="新增ToDo"
-        >
-          <Plus size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* 字体大小调整按钮 */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={decreaseFontSize}
+              disabled={fontSize === 'xs'}
+              className="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="减小字体"
+            >
+              <Minus size={16} />
+            </button>
+            <span className="px-2 text-xs text-gray-600 font-medium min-w-[2rem] text-center">
+              {fontSize.toUpperCase()}
+            </span>
+            <button
+              onClick={increaseFontSize}
+              disabled={fontSize === 'xl'}
+              className="p-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="增大字体"
+            >
+              <PlusIcon size={16} />
+            </button>
+          </div>
+          {/* 新增ToDo按钮 */}
+          <button
+            onClick={() => setShowAddTodo(true)}
+            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors"
+            title="新增ToDo"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </div>
       <div className="flex flex-row flex-wrap gap-4 justify-start items-stretch overflow-y-auto pb-2">
         {todos.map((todo, index) => (
@@ -173,6 +217,7 @@ export default function Todos({ selectedAccountId }: TodosProps) {
               onEdit={setEditTodo}
               onShowMail={setShowMailTodo}
               onDelete={handleDelete}
+              fontSize={fontSize}
             />
           </div>
         ))}
