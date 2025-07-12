@@ -6,7 +6,7 @@ import { withAuth } from "@/lib/auth";
 export const POST = withAuth(async (req: NextRequest, user: any) => {
   try {
     const body = await req.json();
-    const { id, content, status, due_at, email_address, email_uid } = body;
+    const { uuid, content, status, due_at, email_address, email_uid } = body;
     const user_id = user.id;
     if (!user_id) {
       return NextResponse.json({ success: false, error: "Missing user_id" }, { status: 401 });
@@ -14,11 +14,11 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
 
     let result;
     
-    // 如果传入了id，先查询是否存在
-    if (id) {
+    // 如果传入了uuid，先查询是否存在
+    if (uuid) {
       const existingTodo = await db.execute(sql`
         SELECT * FROM public."ToDos" 
-        WHERE id = ${id} AND user_id = ${user_id}
+        WHERE uuid = ${uuid} AND user_id = ${user_id}
       `);
       
       if (existingTodo[0]) {
@@ -27,7 +27,7 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
           UPDATE public."ToDos"
           SET content = ${content}, status = ${status}, due_at = ${due_at}, 
               email_address = ${email_address}, email_uid = ${email_uid}, updated_at = NOW()
-          WHERE id = ${id} AND user_id = ${user_id}
+          WHERE uuid = ${uuid} AND user_id = ${user_id}
           RETURNING *
         `);
       } else {
@@ -39,7 +39,7 @@ export const POST = withAuth(async (req: NextRequest, user: any) => {
         `);
       }
     } else {
-      // 没有传入id，直接插入
+      // 没有传入uuid，直接插入
       result = await db.execute(sql`
         INSERT INTO public."ToDos" (user_id, content, status, due_at, email_address, email_uid)
         VALUES (${user_id}, ${content}, ${status}, ${due_at}, ${email_address}, ${email_uid})

@@ -21,7 +21,7 @@ export default function Todos({ selectedAccountId }: TodosProps) {
   const [editTodo, setEditTodo] = useState<any | null>(null);
   const [showMailTodo, setShowMailTodo] = useState<any | null>(null);
   const [showAddTodo, setShowAddTodo] = useState(false);
-  const [fontSize, setFontSize] = useState<'xs' | 'sm' | 'base' | 'lg' | 'xl'>('base');
+  const [fontSize, setFontSize] = useState<'xs' | 'sm' | 'base' | 'lg' | 'xl'>('sm');
 
   // 字体大小调整函数
   const decreaseFontSize = () => {
@@ -244,6 +244,7 @@ export default function Todos({ selectedAccountId }: TodosProps) {
         todo={showMailTodo}
         onClose={() => setShowMailTodo(null)}
         onSave={handleEditSave}
+        selectedAccountId={selectedAccountId}
       />
     </div>
   );

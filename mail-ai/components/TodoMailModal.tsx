@@ -8,6 +8,7 @@ interface TodoMailModalProps {
   todo: any;
   onClose: () => void;
   onSave: (updated: any) => void;
+  selectedAccountId?: number | null;
 }
 
 const statusIcons = {
@@ -29,10 +30,12 @@ function getTodayStr() {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-export default function TodoMailModal({ open, todo, onClose, onSave }: TodoMailModalProps) {
+export default function TodoMailModal({ open, todo, onClose, onSave, selectedAccountId }: TodoMailModalProps) {
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("pending");
   const [dueAt, setDueAt] = useState(getTodayStr());
+  const [emailData, setEmailData] = useState<any>(null);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
 
   useEffect(() => {
     if (todo) {
@@ -45,6 +48,47 @@ export default function TodoMailModal({ open, todo, onClose, onSave }: TodoMailM
       setDueAt(getTodayStr());
     }
   }, [todo, open]);
+
+  // 获取邮件详情
+  useEffect(() => {
+    if (open && todo?.email_uid && selectedAccountId) {
+      const fetchEmailDetail = async () => {
+        try {
+          setIsLoadingEmail(true);
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          const accessToken = session?.access_token;
+          
+          if (!accessToken) {
+            console.error('No access token, please login again.');
+            return;
+          }
+
+          const response = await fetch(`/api/mails/detail?accountId=${selectedAccountId}&uid=${todo.email_uid}`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            setEmailData(result.email);
+          } else {
+            console.error('Failed to fetch email detail:', result.error);
+          }
+        } catch (error) {
+          console.error('Error fetching email detail:', error);
+        } finally {
+          setIsLoadingEmail(false);
+        }
+      };
+
+      fetchEmailDetail();
+    } else {
+      setEmailData(null);
+    }
+  }, [open, todo?.email_uid, selectedAccountId]);
 
   if (!open) return null;
 
@@ -144,21 +188,25 @@ export default function TodoMailModal({ open, todo, onClose, onSave }: TodoMailM
         {/* 右侧邮件详情区域 6/10 */}
         <div className="flex-[6] bg-white overflow-y-auto">
           <div className="p-6">
-            <EmailDetail 
-              email={{
-                id: todo?.email_uid || 0,
-                subject: todo?.content || "",
-                from: todo?.email_address || "",
-                to: "",
-                date: todo?.due_at || "",
-                text: "",
-                html: "",
-                attachments: [],
-                flags: [],
-                uid: todo?.email_uid || 0,
-              }} 
-              accountId={1} 
-            />
+            {isLoadingEmail ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading email details...</p>
+                </div>
+              </div>
+            ) : emailData ? (
+              <EmailDetail 
+                email={emailData}
+                accountId={selectedAccountId || 1}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center text-gray-500">
+                  <p>No email data available</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

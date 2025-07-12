@@ -35,6 +35,8 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
   const [emails, setEmails] = useState<Email[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processingEmailId, setProcessingEmailId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   // 获取邮件数据
   const fetchEmails = async (accountId: number) => {
@@ -254,10 +256,65 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
                         <Tooltip.Root>
                           <Tooltip.Trigger asChild>
                             <button
-                              className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-100 rounded-full transition-colors"
-                              onClick={e => { e.stopPropagation(); onAddTodo(email); }}
+                              className={`p-1 rounded-full transition-colors ${
+                                processingEmailId === email.id 
+                                  ? 'text-blue-500 bg-blue-100' 
+                                  : 'text-gray-400 hover:text-blue-500 hover:bg-blue-100'
+                              }`}
+                              disabled={processingEmailId === email.id}
+                              onClick={async (e) => { 
+                                e.stopPropagation(); 
+                                setProcessingEmailId(email.id);
+                                setToastMessage(null);
+                                try {
+                                  const supabase = createClient();
+                                  const { data: { session } } = await supabase.auth.getSession();
+                                  const accessToken = session?.access_token;
+                                  
+                                  if (!accessToken) {
+                                    console.error('No access token, please login again.');
+                                    setToastMessage({ type: 'error', message: 'Authentication failed' });
+                                    return;
+                                  }
+                                  
+                                  const response = await fetch('/api/todos/ai/summarize', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Authorization': `Bearer ${accessToken}`,
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ email }),
+                                  });
+                                  
+                                  const result = await response.json();
+                                  
+                                  if (result.success) {
+                                    if (result.data.task) {
+                                      console.log('AI识别并创建了待办事项:', result.data.task);
+                                      setToastMessage({ type: 'success', message: result.data.message });
+                                    } else {
+                                      console.log('AI分析结果:', result.data.message);
+                                      setToastMessage({ type: 'error', message: result.data.message });
+                                    }
+                                  } else {
+                                    console.error('AI分析失败:', result.error);
+                                    setToastMessage({ type: 'error', message: `AI analysis failed: ${result.error}` });
+                                  }
+                                } catch (error) {
+                                  console.error('调用AI接口失败:', error);
+                                  setToastMessage({ type: 'error', message: 'Failed to call AI service' });
+                                } finally {
+                                  setProcessingEmailId(null);
+                                  // 3秒后自动清除提示
+                                  setTimeout(() => setToastMessage(null), 3000);
+                                }
+                              }}
                             >
-                              <CheckSquare size={16} />
+                              {processingEmailId === email.id ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <CheckSquare size={16} />
+                              )}
                             </button>
                           </Tooltip.Trigger>
                           <Tooltip.Portal>
@@ -267,7 +324,7 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
                               align="center"
                               sideOffset={4}
                             >
-                              Add ToDo for this email by AI
+                              {processingEmailId === email.id ? 'Processing...' : 'AI分析并创建待办事项'}
                               <Tooltip.Arrow className="fill-black" />
                             </Tooltip.Content>
                           </Tooltip.Portal>
@@ -300,6 +357,17 @@ const Inbox: React.FC<InboxProps> = ({ onEmailSelect, selectedEmail, selectedAcc
           ))
         )}
       </div>
+      
+      {/* Toast提示 */}
+      {toastMessage && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+          toastMessage.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {toastMessage.message}
+        </div>
+      )}
     </div>
   );
 };
